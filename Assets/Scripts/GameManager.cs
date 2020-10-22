@@ -49,7 +49,10 @@ public class GameManager : MonoBehaviour
     private List<GameObject> currentSelection = new List<GameObject>();
     private float memorizeTime;
     private float replicateTime;
-    private bool replicate;
+
+    private bool startMemory = false;
+    private bool startReplicate = false;
+    private bool replicateTimer = false;
 
     //difficulty and variation progression
     private int completionAmount = 0;
@@ -69,6 +72,7 @@ public class GameManager : MonoBehaviour
         StartInput();
         //sets up the countdown before the memory minigame
         memoryGameCountdown = UnityEngine.Random.Range(5f, 8f);
+        startMemory = true;
     }
 
     // Update is called once per frame
@@ -116,35 +120,66 @@ public class GameManager : MonoBehaviour
                     inputText.text = "Press " + inputCharacter + "!";
                 }
             }
+        }
 
-            //if the memory game countdown hits 0, engage in the memory minigame
-            if (memoryGameCountdown > 0)
-            {
-                memoryGameCountdown -= Time.deltaTime * 1f;
-            }
-            else
-            {
-                //changes bg color to a different color
-                bgImage.GetComponent<Image>().color = Color.yellow;
+        //if the memory game countdown hits 0, engage in the memory minigame
+        if (memoryGameCountdown > 0 && startMemory == true)
+        {
+            memoryGameCountdown -= Time.deltaTime * 1f;
+        }
+        else if (memoryGameCountdown <= 0 && startMemory)
+        {
+            //changes bg color to a different color
+            bgImage.GetComponent<Image>().color = Color.yellow;
 
-                //turns off input minigame and activates the memory minigame
-                inputActive = false;
-                inputScreen.SetActive(false);
+            //turns off input minigame and activates the memory minigame
+            inputActive = false;
+            inputScreen.SetActive(false);
+            startMemory = false;
 
-                StartMemory();
-            }
+            StartMemory();
+        }
+
+        //start of the replicate phase of memory minigame
+        if (memorizeTime > 0 && startReplicate == true)
+        {
+            memorizeTime -= Time.deltaTime * 1f;
+        }
+        else if (memorizeTime <= 0 && startReplicate)
+        {
+            Debug.Log("ending memorize");
+
+            //starts replicate phase
+            memorizePanel.SetActive(false);
+            replicatePanel.SetActive(true);
+            replicateTime = 5f;
+            replicateTimer = true;
+
+            currentSelection = new List<GameObject>();
+            startReplicate = false;
+        }
+
+        //timers for replicate minigame if runs out triggers minigame fail
+        if (replicateTime > 0 && replicateTimer == true)
+        {
+            replicateTime -= Time.deltaTime * 1f;
+        }
+        else if (replicateTime <= 0 && replicateTimer)
+        {
+            Debug.Log("ending replicate");
+
+            FailMiniGame();
+            replicateTimer = false;
         }
     }
 
     //function to start the input game
     public void StartInput()
     {
-        inputActive = true;
+        Debug.Log("starting input");
 
-        if (inputScreen != isActiveAndEnabled)
-        {
-            inputScreen.SetActive(true);
-        }
+        inputActive = true;
+        inputScreen.SetActive(true);
 
         //randomises input option & updates input text accordingly
         randomIndex = UnityEngine.Random.Range(0, 26);
@@ -157,10 +192,12 @@ public class GameManager : MonoBehaviour
     //function to start the memory game
     public void StartMemory()
     {
+        Debug.Log("starting memory");
+
         memoryActive = true;
 
         //sets up the memorize panel with a switch based on current difficulty
-        switch(difficultyTier)
+        switch (difficultyTier)
         {
             case 0: //lowest difficulty only right direction and 3 colours to remember
 
@@ -217,12 +254,70 @@ public class GameManager : MonoBehaviour
         //instantiates the colour buttons
         foreach(GameObject colour in memoryOrder)
         {
+            GameObject button = Instantiate(colour);
+            button.transform.SetParent(memorizePanel.transform, false);
+        }
 
+        //instantiates the direction arrow
+        if (directionSwap)
+        {
+            GameObject arrow = Instantiate(leftDirection);
+            arrow.transform.SetParent(directionSpawn.transform, false);
+
+            memorizePanel.GetComponent<HorizontalLayoutGroup>().reverseArrangement = true;
+        }
+        else
+        {
+            GameObject arrow = Instantiate(rightDirection);
+            arrow.transform.SetParent(directionSpawn.transform, false);
+
+            memorizePanel.GetComponent<HorizontalLayoutGroup>().reverseArrangement = true;
         }
 
         //displays the memorize panel and sets the timers
+        memoryScreen.SetActive(true);
         memorizePanel.SetActive(true);
         memorizeTime = 2f;
+        startReplicate = true;
+    }
+
+    //function that handles failing the memory minigame and transitions back to input minigame
+    public void FailMiniGame()
+    {
+        Debug.Log("failed memory minigame");
+
+        //clears all previous spawned buttons & arrows
+        foreach (Transform child in memorizePanel.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (Transform child in directionSpawn.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        //visual effects and score update
+        bgImage.GetComponent<Image>().color = Color.yellow;
+
+        tintBg.LoseTrigger();
+        shake.TriggerShake(0.4f);
+
+        progress.ChangeProgress(-0.2f);
+
+        //turns off memory minigame and turns back on the input minigame
+        memoryOrder = new List<GameObject>();
+        memoryActive = false;
+        inputActive = true;
+
+        replicatePanel.SetActive(false);
+        memoryScreen.SetActive(false);
+
+        StartInput();
+
+        //sets up the countdown before the next memory minigame
+        memoryGameCountdown = UnityEngine.Random.Range(3f, 8f);
+        startMemory = true;
     }
 
     //function to populate the list
