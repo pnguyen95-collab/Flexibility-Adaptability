@@ -47,14 +47,17 @@ public class GameManager : MonoBehaviour
     private bool memoryActive;
     private List<GameObject> memoryOrder = new List<GameObject>();
     private List<GameObject> currentSelection = new List<GameObject>();
-    private float memorizeTime = 2f;
-    private float replicateTime = 5f;
+    private float memorizeTime;
+    private float replicateTime;
     private bool replicate;
 
     //difficulty and variation progression
     private int completionAmount = 0;
     private int difficultyTier = 0;
-    private bool directionSwap = false;
+    private bool directionSwap;
+
+    //timers
+    private float memoryGameCountdown;
 
     // Start is called before the first frame update
     void Start()
@@ -64,6 +67,8 @@ public class GameManager : MonoBehaviour
         progress = progressBar.GetComponent<ProgressBar>();
 
         StartInput();
+        //sets up the countdown before the memory minigame
+        memoryGameCountdown = UnityEngine.Random.Range(5f, 8f);
     }
 
     // Update is called once per frame
@@ -111,6 +116,23 @@ public class GameManager : MonoBehaviour
                     inputText.text = "Press " + inputCharacter + "!";
                 }
             }
+
+            //if the memory game countdown hits 0, engage in the memory minigame
+            if (memoryGameCountdown > 0)
+            {
+                memoryGameCountdown -= Time.deltaTime * 1f;
+            }
+            else
+            {
+                //changes bg color to a different color
+                bgImage.GetComponent<Image>().color = Color.yellow;
+
+                //turns off input minigame and activates the memory minigame
+                inputActive = false;
+                inputScreen.SetActive(false);
+
+                StartMemory();
+            }
         }
     }
 
@@ -130,5 +152,116 @@ public class GameManager : MonoBehaviour
         inputCharacter = inputOptions[randomIndex];
 
         inputText.text = "Press " + inputCharacter + "!";
+    }
+
+    //function to start the memory game
+    public void StartMemory()
+    {
+        memoryActive = true;
+
+        //sets up the memorize panel with a switch based on current difficulty
+        switch(difficultyTier)
+        {
+            case 0: //lowest difficulty only right direction and 3 colours to remember
+
+                memoryOrder = new List<GameObject>();
+                directionSwap = false;
+
+                for(int i = 0; i < 3; i++)
+                {
+                    int randomColor = UnityEngine.Random.Range(0, 6);
+
+                    CreateColorArray(randomColor);
+                }
+
+                break;
+
+            case 1: //medium difficulty only left direction and 4 colours to remember
+
+                memoryOrder = new List<GameObject>();
+                directionSwap = true;
+
+                for(int i = 0; i > 4; i++)
+                {
+                    int randomColor = UnityEngine.Random.Range(0, 6);
+
+                    CreateColorArray(randomColor);
+                }
+
+                break;
+
+            case 2: //highest difficulty can be either direction and 5 colours to remember
+
+                memoryOrder = new List<GameObject>();
+                int random = UnityEngine.Random.Range(0, 2);
+
+                if (random == 0)
+                {
+                    directionSwap = false;
+                }
+                else
+                {
+                    directionSwap = true;
+                }
+
+                for (int i = 0; i > 5; i++)
+                {
+                    int randomColor = UnityEngine.Random.Range(0, 6);
+
+                    CreateColorArray(randomColor);
+                }
+
+                break;
+        }
+
+        //instantiates the colour buttons
+        foreach(GameObject colour in memoryOrder)
+        {
+
+        }
+
+        //displays the memorize panel and sets the timers
+        memorizePanel.SetActive(true);
+        memorizeTime = 2f;
+    }
+
+    //function to populate the list
+    public void CreateColorArray(int colorIndex)
+    {
+        //adds red
+        if (colorIndex == 0)
+        {
+            memoryOrder.Add(redButtonPrefab);
+        }
+
+        //adds blue
+        if (colorIndex == 1)
+        {
+            memoryOrder.Add(blueButtonPrefab);
+        }
+
+        //adds yellow
+        if (colorIndex == 2)
+        {
+            memoryOrder.Add(yellowButtonPrefab);
+        }
+
+        //adds pink
+        if (colorIndex == 3)
+        {
+            memoryOrder.Add(pinkButtonPrefab);
+        }
+
+        //adds teal
+        if (colorIndex == 4)
+        {
+            memoryOrder.Add(tealButtonPrefab);
+        }
+
+        //adds green
+        if (colorIndex == 5)
+        {
+            memoryOrder.Add(greenButtonPrefab);
+        }
     }
 }
