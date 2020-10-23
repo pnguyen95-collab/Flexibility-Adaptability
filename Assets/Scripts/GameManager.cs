@@ -44,9 +44,9 @@ public class GameManager : MonoBehaviour
     public GameObject leftDirection;
 
     //memory minigame variables
-    private bool memoryActive;
-    private List<GameObject> memoryOrder = new List<GameObject>();
-    private List<GameObject> currentSelection = new List<GameObject>();
+    public bool memoryActive;
+    public List<GameObject> memoryOrder = new List<GameObject>();
+    public List<GameObject> currentSelection = new List<GameObject>();
     private float memorizeTime;
     private float replicateTime;
 
@@ -55,7 +55,7 @@ public class GameManager : MonoBehaviour
     private bool replicateTimer = false;
 
     //difficulty and variation progression
-    private int completionAmount = 0;
+    public int completionAmount = 0;
     private int difficultyTier = 0;
     private bool directionSwap;
 
