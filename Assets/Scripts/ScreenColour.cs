@@ -53,12 +53,12 @@ public class ScreenColour : MonoBehaviour
     public void WinTrigger()
     {
         win = true;
-        flashDuration = 0.4f;
+        flashDuration = 0.2f;
     }
 
     public void LoseTrigger()
     {
         win = false;
-        flashDuration = 0.4f;
+        flashDuration = 0.2f;
     }
 }

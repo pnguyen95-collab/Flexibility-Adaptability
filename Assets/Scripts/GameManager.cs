@@ -10,6 +10,11 @@ public class GameManager : MonoBehaviour
     public GameObject cam;
     public GameObject bgImage;
     public GameObject progressBar;
+    public GameObject winScreen;
+
+    //pause menu
+    public GameObject pauseMenu;
+    private bool currentlyPaused = false;
 
     private ShakeBehaviour shake;
     private ScreenColour tintBg;
@@ -45,6 +50,7 @@ public class GameManager : MonoBehaviour
 
     //memory minigame variables
     public bool memoryActive;
+    public bool replicate;
     public List<GameObject> memoryOrder = new List<GameObject>();
     public List<GameObject> currentSelection = new List<GameObject>();
     private float memorizeTime;
@@ -55,9 +61,13 @@ public class GameManager : MonoBehaviour
     private bool replicateTimer = false;
 
     //difficulty and variation progression
-    public int completionAmount = 0;
+    private int completionAmount = 0;
     private int difficultyTier = 0;
     private bool directionSwap;
+
+    //handles colour button indexes
+    private int colourCount;
+    private int colourIndex = 0;
 
     //timers
     private float memoryGameCountdown;
@@ -91,12 +101,18 @@ public class GameManager : MonoBehaviour
                 {
                     //visual effects & score update
                     tintBg.WinTrigger();
-                    progress.ChangeProgress(0.05f);
+                    progress.ChangeProgress(0.025f);
 
                     //win condition check
-                    if(progress.slider.value == 1f)
+                    if(progress.slider.value >= 1f)
                     {
-                        //win screen here
+                        //win screen display
+                        inputScreen.SetActive(false);
+                        memoryScreen.SetActive(false);
+                        progressBar.SetActive(false);
+
+                        winScreen.SetActive(true);
+                        Time.timeScale = 0;
                     }
 
                     //resets input character
@@ -154,6 +170,7 @@ public class GameManager : MonoBehaviour
             replicatePanel.SetActive(true);
             replicateTime = 5f;
             replicateTimer = true;
+            replicate = true;
 
             currentSelection = new List<GameObject>();
             startReplicate = false;
@@ -169,7 +186,6 @@ public class GameManager : MonoBehaviour
             Debug.Log("ending replicate");
 
             FailMiniGame();
-            replicateTimer = false;
         }
     }
 
@@ -218,7 +234,7 @@ public class GameManager : MonoBehaviour
                 memoryOrder = new List<GameObject>();
                 directionSwap = true;
 
-                for(int i = 0; i > 4; i++)
+                for(int i = 0; i < 4; i++)
                 {
                     int randomColor = UnityEngine.Random.Range(0, 6);
 
@@ -241,7 +257,7 @@ public class GameManager : MonoBehaviour
                     directionSwap = true;
                 }
 
-                for (int i = 0; i > 5; i++)
+                for (int i = 0; i < 5; i++)
                 {
                     int randomColor = UnityEngine.Random.Range(0, 6);
 
@@ -271,14 +287,27 @@ public class GameManager : MonoBehaviour
             GameObject arrow = Instantiate(rightDirection);
             arrow.transform.SetParent(directionSpawn.transform, false);
 
-            memorizePanel.GetComponent<HorizontalLayoutGroup>().reverseArrangement = true;
+            memorizePanel.GetComponent<HorizontalLayoutGroup>().reverseArrangement = false;
         }
 
         //displays the memorize panel and sets the timers
         memoryScreen.SetActive(true);
         memorizePanel.SetActive(true);
-        memorizeTime = 2f;
         startReplicate = true;
+
+        //sets the amount of memorize time giving more time for harder difficulties
+        switch(difficultyTier)
+        {
+            case 0:
+                memorizeTime = 3f;
+                break;
+            case 1:
+                memorizeTime = 3.5f;
+                break;
+            case 2:
+                memorizeTime = 4f;
+                break;
+        }
     }
 
     //function that handles failing the memory minigame and transitions back to input minigame
@@ -303,12 +332,28 @@ public class GameManager : MonoBehaviour
         tintBg.LoseTrigger();
         shake.TriggerShake(0.4f);
 
-        progress.ChangeProgress(-0.2f);
+        progress.ChangeProgress(-0.1f);
+
+        //changes difficulty if game has been going on for a while
+        completionAmount++;
+
+        if (completionAmount >= 3 && completionAmount <= 6) //tier 1
+        {
+            difficultyTier = 1;
+        }
+        else if (completionAmount >= 7) //tier 2
+        {
+            difficultyTier = 2;
+        }
 
         //turns off memory minigame and turns back on the input minigame
         memoryOrder = new List<GameObject>();
+        currentSelection = new List<GameObject>();
+
         memoryActive = false;
         inputActive = true;
+        replicate = false;
+        replicateTimer = false;
 
         replicatePanel.SetActive(false);
         memoryScreen.SetActive(false);
@@ -318,6 +363,150 @@ public class GameManager : MonoBehaviour
         //sets up the countdown before the next memory minigame
         memoryGameCountdown = UnityEngine.Random.Range(3f, 8f);
         startMemory = true;
+    }
+
+    //function that handles winning the memory minigame and transitions back to input minigame
+    public void WinMiniGame()
+    {
+        Debug.Log("passed memory minigame");
+
+        //clears all previous spawned buttons & arrows
+        foreach (Transform child in memorizePanel.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        foreach (Transform child in directionSpawn.transform)
+        {
+            Destroy(child.gameObject);
+        }
+
+        //visual effects and score update
+        bgImage.GetComponent<Image>().color = Color.yellow;
+
+        tintBg.WinTrigger();
+
+        progress.ChangeProgress(0.025f);
+
+        //win condition check
+        if (progress.slider.value >= 1f)
+        {
+            //win screen display
+            inputScreen.SetActive(false);
+            memoryScreen.SetActive(false);
+            progressBar.SetActive(false);
+
+            winScreen.SetActive(true);
+            Time.timeScale = 0;
+        }
+
+        //changes difficulty if game has been going on for a while
+        completionAmount++;
+
+        if (completionAmount >= 3 && completionAmount <= 6) //tier 1
+        {
+            difficultyTier = 1;
+        }
+        else if (completionAmount >= 7) //tier 2
+        {
+            difficultyTier = 2;
+        }
+
+        //turns off memory minigame and turns back on the input minigame
+        memoryOrder = new List<GameObject>();
+        currentSelection = new List<GameObject>();
+
+        memoryActive = false;
+        inputActive = true;
+        replicate = false;
+        replicateTimer = false;
+
+        replicatePanel.SetActive(false);
+        memoryScreen.SetActive(false);
+
+        StartInput();
+
+        //sets up the countdown before the next memory minigame
+        memoryGameCountdown = UnityEngine.Random.Range(3f, 8f);
+        startMemory = true;
+    }
+
+    //function that handles what happens when you click on the button
+    public void ButtonPress(int colour)
+    {
+        //checks if it's currently memory minigame otherwise do nothing
+        if (replicate)
+        {
+            colourCount = memoryOrder.Count;
+
+            //adds the specified button to the current selection
+            switch (colour)
+            {
+                case 0: //red
+                    currentSelection.Add(redButtonPrefab);
+                    break;
+                case 1: //blue
+                    currentSelection.Add(blueButtonPrefab);
+                    break;
+                case 2: //yellow
+                    currentSelection.Add(yellowButtonPrefab);
+                    break;
+                case 3: //pink
+                    currentSelection.Add(pinkButtonPrefab);
+                    break;
+                case 4: //teal
+                    currentSelection.Add(tealButtonPrefab);
+                    break;
+                case 5: //green
+                    currentSelection.Add(greenButtonPrefab);
+                    break;
+            }
+
+            print(memoryOrder[colourIndex] + " " + currentSelection[colourIndex]);
+
+            //compares the current index of buttons in the order and if correct keep checking until the player has gotten them all or failed on one
+            if (memoryOrder[colourIndex] == currentSelection[colourIndex])
+            {
+                colourIndex++;
+                tintBg.WinTrigger();
+
+                //player wins minigame if all buttons pressed in correct order
+                if (colourIndex == colourCount)
+                {
+                    WinMiniGame();
+                    colourIndex = 0;
+                }
+            }
+            else
+            {
+                //trigger minigame to fail
+                replicate = false;
+                FailMiniGame();
+                colourIndex = 0;
+            }
+        }
+
+        return;
+    }
+
+    //function to pause/unpause the game
+    public void Pause()
+    {
+        //checks if currently paused
+        if(currentlyPaused)
+        {
+            //unpauses the game
+            pauseMenu.SetActive(false);
+            Time.timeScale = 1;
+            currentlyPaused = false;
+        }
+        else
+        {
+            //pause the game
+            Time.timeScale = 0;
+            pauseMenu.SetActive(true);
+            currentlyPaused = true;
+        }
     }
 
     //function to populate the list
