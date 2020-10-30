@@ -460,6 +460,9 @@ public class GameManager : MonoBehaviour
                 case 5: //green
                     currentSelection.Add(greenButtonPrefab);
                     break;
+                default:
+                    print("Outside Colour Range!");
+                    break;
             }
 
             print(memoryOrder[colourIndex] + " " + currentSelection[colourIndex]);
@@ -485,8 +488,7 @@ public class GameManager : MonoBehaviour
                 colourIndex = 0;
             }
         }
-
-        return;
+ 
     }
 
     //function to pause/unpause the game
